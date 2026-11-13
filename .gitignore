@@ -1,0 +1,26 @@
+# Simulation testbench folder
+/sim/
+
+# Quartus generated databases and artifacts
+**/db/
+**/incremental_db/
+**/output_files/
+**/simulation/
+*.qws
+*.qdb
+*.rpt
+*.summary
+*.sof
+*.pof
+*.jdi
+*.smsg
+*.sld
+
+# ModelSim generated files
+**/work/
+transcript
+vsim.wlf
+
+# Misc
+.DS_Store
+.vscode/
