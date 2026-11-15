@@ -38,7 +38,7 @@ module game_fsm (clock,resetn,
         if (!resetn) begin
             scene <= TOWN;
         end else begin
-            case (scene)
+            case (scene) // I add back_palse so could return to Town() at any sene except battle
 
                 TOWN: begin
                     if (interact_pulse && at_house1)
@@ -50,12 +50,12 @@ module game_fsm (clock,resetn,
                 end
 
                 HOUSE1: begin
-                    if(interact_pulse && at_house1_exit)
-                        scene <= TOWN;
+                    if(back_pulse||(interact_pulse && at_house1_exit))
+                        scene <= TOWN;  
                 end
 
                 HOUSE2: begin
-                    if(interact_pulse && at_house2_exit)
+                    if(back_pulse||(interact_pulse && at_house2_exit))
                         scene <= TOWN;
                 end
 
@@ -71,7 +71,14 @@ module game_fsm (clock,resetn,
                         scene <= DEFEAT;
                     else if (battle_win) 
                         scene <= VICTORY;
+                    /*else if(back_pulse) 暂停/保存
+                        */scene <= PAUSE;  
                 end
+
+                /*PAUSE: begin
+                    if(back_pulse)
+                        scene <= BATTLE;
+                end*/
 
                 VICTORY, DEFEAT: begin
                     if (back_pulse) 
