@@ -24,9 +24,8 @@ module game_top (CLOCK_50,KEY,SW,LEDR);
         .clock(CLOCK_50), .resetn(resetn), .key_n(KEY[3]), .pulse(back_pulse)
     );
 
-    //扎克检查一下这里的接口
     exploration explore (
-        .clk(CLOCK_50),
+        .clock(CLOCK_50),
         .resetn(resetn),
         .scene(scene),
         .move_pulse(step_pulse),

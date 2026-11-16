@@ -1,22 +1,25 @@
+// Cheched by Hongsen on 2026-11-16
+
 // Tile coordinates, NOT VGA pixels. Map is 20 columns by 15 rows.
 // move_dir: 00 up, 01 down, 10 left, 11 right.
 
-module exploration (clk,resetn,scene,move_pulse,move_dir,player_x,player_y);
+module exploration (clock,resetn,scene,move_pulse,move_dir,player_x,player_y);
 
-    input wire clk;
-    input wire resetn;
-    input wire [2:0] scene;
-    input wire move_pulse;
-    input wire [1:0] move_dir;
+    input wire clock; // CLOCK_50
+    input wire resetn; // game_top.v, from outside input device
+    input wire [2:0] scene; // output from game_fsm.v
+    input wire move_pulse; // output from buttom pulse
+    input wire [1:0] move_dir; // Input from outside device
     output reg [4:0] player_x;
     output reg [4:0] player_y;
 
-    localparam TOWN    = 3'd0;
-    localparam HOUSE1  = 3'd1;
-    localparam HOUSE2  = 3'd2;
-    localparam DUNGEON = 3'd3;
-    localparam BATTLE  = 3'd4;
+    localparam [2:0] TOWN    = 3'd0;
+    localparam [2:0] HOUSE1  = 3'd1;
+    localparam [2:0] HOUSE2  = 3'd2;
+    localparam [2:0] DUNGEON = 3'd3;
+    localparam [2:0] BATTLE  = 3'd4;
 
+    // Calculated based on the map, need to be modified
     localparam [4:0] START_X = 5'd10;
     localparam [4:0] START_Y = 5'd7;
     localparam [4:0] MAX_X   = 5'd19;
@@ -45,7 +48,7 @@ module exploration (clk,resetn,scene,move_pulse,move_dir,player_x,player_y);
             dungeon_return_x <= START_X;
             dungeon_return_y <= START_Y;
         end else begin
-            previous_scene <= scene;
+            previous_scene <= scene; // Read current scene
 
             // scene changes before move.
             if (scene != previous_scene) begin

@@ -1,5 +1,4 @@
-# Simulation testbench folder
-/sim/
+/tb_input_decoder.v
 
 # Quartus generated databases and artifacts
 **/db/
