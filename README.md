@@ -1,5 +1,5 @@
 
-# Dungeon Deck — ECE241 起始项目（第 1 天）
+# Dungeon Deck — ECE241 起始项目
 
 ## 目标一
 
@@ -55,7 +55,8 @@
 - `rtl/exploration.v`：管理角色在地图中的坐标，并检查地图边界（暂时不包含墙壁碰撞检测）。
 - `rtl/input_decoder.v`：将 PS/2 Set-2 扫描码字节转换为持续一个时钟周期的 WASD、Enter 和 Escape 输入事件。
 - `rtl/combat.v`：战斗系统占位模块，目前只有 TODO，尚未实现具体功能。
-- `rtl/renderer.v`：图形渲染占位模块，目前只有 TODO，尚未实现具体功能。
+- `rtl/print.v`：图形渲染占位模块，目前只有 TODO，尚未实现具体功能。
+- `rtl/player_fsm.v`: 保存角色状态
 
 ## 仿真（Simulation）
 
@@ -87,27 +88,27 @@ iverilog -g2005-sv -s tb_input_decoder -o /tmp/tb_ps2 rtl/input_decoder.v sim/tb
 
 ## 后续开发计划
 
-1. **完成 FSM 和角色移动的开发板调试**
-   - 将 FSM 和角色移动调试顶层模块下载到 DE1-SoC 开发板。
-   - 通过按键和开关控制角色移动与场景切换。
-   - 验证 LEDR 显示的坐标和场景 ID 是否正确。
-
-2. **接入 PS/2 键盘控制**
-   - 获取课程提供的 DE1-SoC `PS2_Controller` 核心模块。
-   - 将 `received_data` 和 `received_data_en` 连接到 `input_decoder`。
-   - 使用解码后的键盘输入事件替换 `game_top` 中原本基于 KEY/SW 的调试输入。
-
-3. **与 VGA 开发成员统一设计**
+1. **与 VGA 开发成员统一设计**
    - 确定游戏场景 ID。
    - 确定地图的格子布局（Tile Map）。
-   - 确定角色坐标系统及坐标方向约定。
+   - 确定角色坐标系统及坐标方向约定。 
 
-4. **集成 VGA 图形显示**
+2. **集成 VGA 图形显示**
    - 添加 VGA 模块。
    - 在屏幕上绘制代表玩家的矩形。
    - 假设 VGA 逻辑分辨率为 `160 × 120`，则玩家矩形的位置为：
      - `pixel_x = player_x * 8`
      - `pixel_y = player_y * 8`
+
+3. **完成 FSM 和角色移动的开发板调试**
+   - 将 FSM 和角色移动调试顶层模块下载到 DE1-SoC 开发板。
+   - 通过按键和开关控制角色移动与场景切换。
+   - 验证 LEDR 显示的坐标和场景 ID 是否正确。
+
+4. **接入 PS/2 键盘控制**
+   - 获取课程提供的 DE1-SoC `PS2_Controller` 核心模块。
+   - 将 `received_data` 和 `received_data_en` 连接到 `input_decoder`。
+   - 使用解码后的键盘输入事件替换 `game_top` 中原本基于 KEY/SW 的调试输入。
 
 5. **逐步完善游戏功能**
    - 添加地图墙壁及碰撞检测。
