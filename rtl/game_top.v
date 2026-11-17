@@ -59,9 +59,9 @@ module game_top (CLOCK_50,KEY,SW,LEDR,VGA_R, VGA_G, VGA_B,VGA_HS, VGA_VS, VGA_CL
     // Should be modified after setting the map using VGA
     // Enter a building or dungeon by pressing KEY[2] on its door tile.
     wire at_house1 = 
-        (player_x == 5'd4)  && (player_y == 5'd6);
+        (player_x == 5'd4)  && (player_y == 5'd5); 
     wire at_house2 = 
-        (player_x == 5'd4) && (player_y == 5'd13);
+        (player_x == 5'd4) && (player_y == 5'd12);
     wire at_dungeon = 
         (player_x == 5'd18) && (player_y == 5'd7);
 
