@@ -50,6 +50,29 @@ module game_top (CLOCK_50,KEY,SW,LEDR);
     wire at_dungeon = (player_x == 5'd10) && (player_y == 5'd12);
     wire at_enemy = (player_x == 5'd10) && (player_y == 5'd5);
 
+    vga_adapter #(
+        .RESOLUTION("320x240"),
+        .COLOR_DEPTH(9),
+        // Wait for a map background
+        .BACKGROUND_IMAGE(/* "a.mif: put in data file" */)
+    )VGA(
+        .resetn(resetn),
+        .clock(CLOCK_50),
+        .color(draw_color),
+        .x(draw_x),
+        .y(draw_y),
+        .write(draw_write),
+
+        .VGA_R(VGA_R),
+        .VGA_G(VGA_G),
+        .VGA_B(VGA_B),
+        .VGA_HS(VGA_HS),
+        .VGA_VS(VGA_VS),
+        .VGA_BLANK_N(VGA_BLANK_N),
+        .VGA_SYNC_N(VGA_SYNC_N),
+        .VGA_CLK(VGA_CLK)
+    );
+
     // game states ports
     game_fsm game (
         .clock(CLOCK_50),
@@ -75,7 +98,7 @@ module game_top (CLOCK_50,KEY,SW,LEDR);
     // LEDR[2:0] = scene (0 town, 1 house1, 2 house2, 3 dungeon, 4 battle)
     assign LEDR = {2'b00, (SW[9] ? player_y : player_x), scene};
 
-    renderer render (
+    printer print(
         .clk(CLOCK_50),
         .resetn(resetn),
         .scene(scene),
