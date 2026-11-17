@@ -35,7 +35,7 @@ module exploration (clock,resetn,scene,move_pulse,move_dir,player_x,player_y);
     reg [4:0] dungeon_return_x;
     reg [4:0] dungeon_return_y;
 
-    always @(posedge clk or negedge resetn) begin
+    always @(posedge clock or negedge resetn) begin
         if (!resetn) begin
             player_x <= START_X;
             player_y <= START_Y;
