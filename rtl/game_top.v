@@ -2,12 +2,15 @@
 
 // Dungeon Deck - Day 1 board debug top (no VGA/PS2 core yet)
 // DE1-SoC: KEY inputs are active low.
-module game_top (CLOCK_50,KEY,SW,LEDR);
+module game_top (CLOCK_50,KEY,SW,LEDR,VGA_R, VGA_G, VGA_B,VGA_HS, VGA_VS, VGA_CLK, VGA_BLANK_N, VGA_SYNC_N);
 
     input  wire CLOCK_50,
     input  wire [3:0] KEY,
     input  wire [9:0] SW,
     output wire [9:0] LEDR
+    output wire [7:0] VGA_R, VGA_G, VGA_B,
+    output wire VGA_HS, VGA_VS, VGA_CLK,
+    output wire VGA_BLANK_N, VGA_SYNC_N
 
     wire resetn = KEY[0];
     wire step_pulse, interact_pulse, back_pulse;
@@ -18,6 +21,18 @@ module game_top (CLOCK_50,KEY,SW,LEDR);
     wire [7:0] draw_y; // 0~239
     wire [8:0] draw_color; // 9 bits RGB
     wire vga_write;
+
+    reg [2:0] previous_scene;
+    wire scene_ready;
+
+    always @(posedge CLOCK_50 or negedge resetn) begin
+    if (!resetn)
+        previous_scene <= 3'd0;
+    else
+        previous_scene <= scene;
+    end
+
+    assign scene_ready = (scene == previous_scene);
     
 
     // Pulse signals
@@ -35,8 +50,8 @@ module game_top (CLOCK_50,KEY,SW,LEDR);
     .clock(CLOCK_50),
     .resetn(resetn),
     .scene(scene),
-    .move_pulse(move_event),   // changed to connect exploration.v Zicheng
-    .move_dir(direction_sync),
+    .move_pulse(step_pulse && scene_ready && !interact_pulse && !back_pulse),
+    .move_dir(SW[1:0]),
     .player_x(player_x),
     .player_y(player_y)
 );
@@ -61,7 +76,7 @@ module game_top (CLOCK_50,KEY,SW,LEDR);
         .color(draw_color),
         .x(draw_x),
         .y(draw_y),
-        .write(draw_write),
+        .write(vga_write),
 
         .VGA_R(VGA_R),
         .VGA_G(VGA_G),
@@ -98,20 +113,17 @@ module game_top (CLOCK_50,KEY,SW,LEDR);
     // LEDR[2:0] = scene (0 town, 1 house1, 2 house2, 3 dungeon, 4 battle)
     assign LEDR = {2'b00, (SW[9] ? player_y : player_x), scene};
 
-    printer print(
+    printer print (
         .clk(CLOCK_50),
         .resetn(resetn),
         .scene(scene),
         .scene_ready(scene_ready),
         .player_x(player_x),
         .player_y(player_y),
-        .VGA_R(VGA_R),
-        .VGA_G(VGA_G),
-        .VGA_B(VGA_B),
-        .VGA_HS(VGA_HS),
-        .VGA_VS(VGA_VS),
-        .VGA_CLK(VGA_CLK),
-        .VGA_BLANK_N(VGA_BLANK_N),
-        .VGA_SYNC_N(VGA_SYNC_N)  // 这是接到renderer的接口
+
+        .draw_x(draw_x),
+        .draw_y(draw_y),
+        .draw_color(draw_color),
+        .draw_write(vga_write)
     );
 endmodule
