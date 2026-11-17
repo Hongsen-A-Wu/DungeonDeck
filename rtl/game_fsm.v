@@ -72,7 +72,7 @@ module game_fsm (clock,resetn,
                     else if (battle_win) 
                         scene <= VICTORY;
                     /*else if(back_pulse) 暂停/保存
-                        */scene <= PAUSE;  
+                        scene <= PAUSE; */ 
                 end
 
                 /*PAUSE: begin
