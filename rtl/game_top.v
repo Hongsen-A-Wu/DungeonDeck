@@ -19,29 +19,6 @@ module game_top (CLOCK_50,KEY,SW,LEDR);
     wire [8:0] draw_color; // 9 bits RGB
     wire vga_write;
 
-    vga_adapter #(
-        .RESOLUTION("320x240"),
-        .COLOR_DEPTH(9),
-        // Wait for a map background
-        .BACKGROUND_IMAGE()
-    )VGA(
-        .resetn(resetn),
-        .clock(CLOCK_50),
-        .color(draw_color),
-        .x(draw_x),
-        .y(draw_y),
-        .write(draw_write),
-
-        .VGA_R(VGA_R),
-        .VGA_G(VGA_G),
-        .VGA_B(VGA_B),
-        .VGA_HS(VGA_HS),
-        .VGA_VS(VGA_VS),
-        .VGA_BLANK_N(VGA_BLANK_N),
-        .VGA_SYNC_N(VGA_SYNC_N),
-        .VGA_CLK(VGA_CLK)
-    );
-
     // Pulse signals
     button_pulse step_button (
         .clock(CLOCK_50), .resetn(resetn), .key_n(KEY[1]), .pulse(step_pulse)
@@ -97,24 +74,4 @@ module game_top (CLOCK_50,KEY,SW,LEDR);
     // SW[9]=1: y coordinate on LEDR[7:3]
     // LEDR[2:0] = scene (0 town, 1 house1, 2 house2, 3 dungeon, 4 battle)
     assign LEDR = {2'b00, (SW[9] ? player_y : player_x), scene};
-
-    renderer render (
-    .clk(CLOCK_50),
-    .resetn(resetn),
-
-    .scene(scene),               
-    .scene_ready(scene_ready),
-
-    .player_x(player_x),
-    .player_y(player_y),
-
-    .VGA_R(VGA_R),
-    .VGA_G(VGA_G),
-    .VGA_B(VGA_B),
-    .VGA_HS(VGA_HS),
-    .VGA_VS(VGA_VS),
-    .VGA_CLK(VGA_CLK),
-    .VGA_BLANK_N(VGA_BLANK_N),
-    .VGA_SYNC_N(VGA_SYNC_N)
-);
 endmodule
