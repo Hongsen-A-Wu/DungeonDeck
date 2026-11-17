@@ -18,6 +18,7 @@ module game_top (CLOCK_50,KEY,SW,LEDR);
     wire [7:0] draw_y; // 0~239
     wire [8:0] draw_color; // 9 bits RGB
     wire vga_write;
+    
 
     // Pulse signals
     button_pulse step_button (
@@ -30,16 +31,15 @@ module game_top (CLOCK_50,KEY,SW,LEDR);
         .clock(CLOCK_50), .resetn(resetn), .key_n(KEY[3]), .pulse(back_pulse)
     );
 
-    // Exploration ports
-    exploration explore (
-        .clock(CLOCK_50),
-        .resetn(resetn),
-        .scene(scene),
-        .move_pulse(step_pulse),
-        .move_dir(SW[1:0]),
-        .player_x(player_x),
-        .player_y(player_y)
-    );
+   exploration explore (
+    .clock(CLOCK_50),
+    .resetn(resetn),
+    .scene(scene),
+    .move_pulse(move_event),   // changed to connect exploration.v Zicheng
+    .move_dir(direction_sync),
+    .player_x(player_x),
+    .player_y(player_y)
+);
 
     // Should be modified after setting the map using VGA
     // Enter a building or dungeon by pressing KEY[2] on its door tile.
@@ -74,4 +74,21 @@ module game_top (CLOCK_50,KEY,SW,LEDR);
     // SW[9]=1: y coordinate on LEDR[7:3]
     // LEDR[2:0] = scene (0 town, 1 house1, 2 house2, 3 dungeon, 4 battle)
     assign LEDR = {2'b00, (SW[9] ? player_y : player_x), scene};
+
+    renderer render (
+        .clk(CLOCK_50),
+        .resetn(resetn),
+        .scene(scene),
+        .scene_ready(scene_ready),
+        .player_x(player_x),
+        .player_y(player_y),
+        .VGA_R(VGA_R),
+        .VGA_G(VGA_G),
+        .VGA_B(VGA_B),
+        .VGA_HS(VGA_HS),
+        .VGA_VS(VGA_VS),
+        .VGA_CLK(VGA_CLK),
+        .VGA_BLANK_N(VGA_BLANK_N),
+        .VGA_SYNC_N(VGA_SYNC_N)  // 这是接到renderer的接口
+    );
 endmodule
