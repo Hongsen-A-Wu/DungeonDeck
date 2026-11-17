@@ -22,6 +22,7 @@ module printer(
     localparam [2:0] BATTLE  = 3'd4;
     localparam [2:0] VICTORY = 3'd5;
     localparam [2:0] DEFEAT  = 3'd6;
+    localparam [2:0] START = 3'd7;
 
     // Color format: {RRR, GGG, BBB}.
     localparam [8:0] BLACK   = 9'b000_000_000;
@@ -37,6 +38,33 @@ module printer(
     reg [2:0] draw_scene;
     reg [4:0] draw_player_x;
     reg [4:0] draw_player_y;
+
+    // Memory of background
+    (* ram_init_file = "../data/start.mif" *)
+    reg [8:0] start_rom [0:76799];
+
+    (* ram_init_file = "../data/town.mif" *)
+    reg [8:0] town_rom [0:76799];
+
+
+    reg [8:0] start_pixel;
+    reg [8:0] town_pixel;
+
+    wire [8:0] next_x = (draw_x == 9'd319) ? 9'd0 : draw_x + 9'd1;
+
+    wire[7:0] next_y = 
+        (draw_x == 9'd319) ? 
+        ((draw_y) == 8'd239 ? 8'd0 : draw_y + 8'd1): draw_y;
+
+    wire [16:0] pixel_addr = 
+        ({9'd0,next_y}<<8)+
+        ({9'd0,next_y}<<6)+
+        {8'd0,next_x};
+
+    always @(posedge clk) begin
+        start_pixel <= start_rom[pixel_addr];
+        town_pixel <= town_rom[pixel_addr];
+    end
 
     wire [4:0] tile_x;
     wire [4:0] tile_y;
@@ -57,11 +85,12 @@ module printer(
 
         always @(posedge clk or negedge resetn) begin
         if (!resetn) begin
+            draw_scene <= START;
+            draw_player_x <= 5'd0;
+            draw_player_y <= 5'd0;
+
             draw_x <= 9'd0;
             draw_y <= 8'd0;
-            draw_scene <= TOWN;
-            draw_player_x <= 5'd10;
-            draw_player_y <= 5'd7;
         end else if (draw_x == 9'd319) begin
             draw_x <= 9'd0;
             if (draw_y == 8'd239) begin
@@ -78,8 +107,10 @@ module printer(
     always @(*) begin
         // 1. Background.
         draw_color = BLACK;
+
         case (draw_scene)
-            TOWN:    draw_color = GREEN;
+            START:   draw_color = start_pixel;
+            TOWN:    draw_color = town_pixel;
             HOUSE1:  draw_color = BLUE;
             HOUSE2:  draw_color = CYAN;
             DUNGEON: draw_color = BLACK;
@@ -97,17 +128,21 @@ module printer(
         endcase
         if (exploration_scene) begin
             // 2. Grid lines.
-            if ((inside_x == 4'd0) || (inside_y == 4'd0)) begin
+
+            /*if ((inside_x == 4'd0) || (inside_y == 4'd0)) begin
                 if (draw_scene == DUNGEON) draw_color = BLUE;
                 else draw_color = BLACK;
-            end
+            end*/
+
             // 3. Doors, exits and enemy.
             case (draw_scene)
-                TOWN: begin
+
+                /*TOWN: begin
                     if ((tile_x == 5'd4) && (tile_y == 5'd3)) draw_color = BLUE;
                     if ((tile_x == 5'd15) && (tile_y == 5'd3)) draw_color = CYAN;
                     if ((tile_x == 5'd10) && (tile_y == 5'd12)) draw_color = MAGENTA;
-                end
+                end*/
+
                 HOUSE1, HOUSE2:
                     if ((tile_x == 5'd10) && (tile_y == 5'd13)) draw_color = YELLOW;
                 DUNGEON:

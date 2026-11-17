@@ -4,13 +4,13 @@
 // DE1-SoC: KEY inputs are active low.
 module game_top (CLOCK_50,KEY,SW,LEDR,VGA_R, VGA_G, VGA_B,VGA_HS, VGA_VS, VGA_CLK, VGA_BLANK_N, VGA_SYNC_N);
 
-    input  wire CLOCK_50,
-    input  wire [3:0] KEY,
-    input  wire [9:0] SW,
-    output wire [9:0] LEDR
-    output wire [7:0] VGA_R, VGA_G, VGA_B,
-    output wire VGA_HS, VGA_VS, VGA_CLK,
-    output wire VGA_BLANK_N, VGA_SYNC_N
+    input  wire CLOCK_50;
+    input  wire [3:0] KEY;
+    input  wire [9:0] SW;
+    output wire [9:0] LEDR;
+    output wire [7:0] VGA_R, VGA_G, VGA_B;
+    output wire VGA_HS, VGA_VS, VGA_CLK;
+    output wire VGA_BLANK_N, VGA_SYNC_N;
 
     wire resetn = KEY[0];
     wire step_pulse, interact_pulse, back_pulse;
@@ -27,7 +27,7 @@ module game_top (CLOCK_50,KEY,SW,LEDR,VGA_R, VGA_G, VGA_B,VGA_HS, VGA_VS, VGA_CL
 
     always @(posedge CLOCK_50 or negedge resetn) begin
     if (!resetn)
-        previous_scene <= 3'd0;
+        previous_scene <= 3'd7; //START
     else
         previous_scene <= scene;
     end
@@ -58,18 +58,20 @@ module game_top (CLOCK_50,KEY,SW,LEDR,VGA_R, VGA_G, VGA_B,VGA_HS, VGA_VS, VGA_CL
 
     // Should be modified after setting the map using VGA
     // Enter a building or dungeon by pressing KEY[2] on its door tile.
-    wire at_house1 = (player_x == 5'd4)  && (player_y == 5'd3);
-    wire at_house2 = (player_x == 5'd15) && (player_y == 5'd3);
-    wire at_house1_exit = 
-    wire at_house2_exit =
-    wire at_dungeon = (player_x == 5'd10) && (player_y == 5'd12);
+    wire at_house1 = 
+        (player_x == 5'd4)  && (player_y == 5'd6);
+    wire at_house2 = 
+        (player_x == 5'd4) && (player_y == 5'd13);
+    wire at_dungeon = 
+        (player_x == 5'd18) && (player_y == 5'd7);
+
+    wire at_house1_exit = (player_x == 5'd10) && (player_y == 5'd13);
+    wire at_house2_exit = (player_x == 5'd10) && (player_y == 5'd13);
     wire at_enemy = (player_x == 5'd10) && (player_y == 5'd5);
 
     vga_adapter #(
         .RESOLUTION("320x240"),
-        .COLOR_DEPTH(9),
-        // Wait for a map background
-        .BACKGROUND_IMAGE(/* "a.mif: put in data file" */)
+        .COLOR_DEPTH(9)
     )VGA(
         .resetn(resetn),
         .clock(CLOCK_50),

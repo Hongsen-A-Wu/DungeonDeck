@@ -34,11 +34,18 @@ module game_fsm (clock,resetn,
     parameter VICTORY = 3'd5;
     parameter DEFEAT  = 3'd6;
 
+    parameter START = 3'd7;
+
     always @(posedge clock or negedge resetn) begin
         if (!resetn) begin
-            scene <= TOWN;
+            scene <= START;
         end else begin
-            case (scene) // I add back_palse so could return to Town() at any sene except battle
+            case (scene)
+
+                START: begin
+                    if(interact_pulse)
+                        scene <= TOWN;
+                end
 
                 TOWN: begin
                     if (interact_pulse && at_house1)
@@ -50,12 +57,12 @@ module game_fsm (clock,resetn,
                 end
 
                 HOUSE1: begin
-                    if(back_pulse||(interact_pulse && at_house1_exit))
+                    if(back_pulse && at_house1_exit)
                         scene <= TOWN;  
                 end
 
                 HOUSE2: begin
-                    if(back_pulse||(interact_pulse && at_house2_exit))
+                    if(back_pulse && at_house2_exit)
                         scene <= TOWN;
                 end
 
@@ -85,7 +92,7 @@ module game_fsm (clock,resetn,
                         scene <= TOWN;
                 end
 
-                default: scene <= TOWN;
+                default: scene <= START;
             endcase
         end
     end

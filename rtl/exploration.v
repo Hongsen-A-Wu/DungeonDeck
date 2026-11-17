@@ -18,10 +18,24 @@ module exploration (clock,resetn,scene,move_pulse,move_dir,player_x,player_y);
     localparam [2:0] HOUSE2  = 3'd2;
     localparam [2:0] DUNGEON = 3'd3;
     localparam [2:0] BATTLE  = 3'd4;
+    localparam [2:0] START   = 3'd7;
+
 
     // Calculated based on the map, need to be modified
-    localparam [4:0] START_X = 5'd10;
-    localparam [4:0] START_Y = 5'd7;
+    localparam [4:0] TOWN_START_X = 5'd11;
+    localparam [4:0] TOWN_START_Y = 5'd7;
+
+
+    // 修改
+    localparam [4:0] HOUSE1_START_X = 5'd11;
+    localparam [4:0] HOUSE1_START_Y = 5'd7;
+
+    localparam [4:0] HOUSE2_START_X = 5'd11;
+    localparam [4:0] HOUSE2_START_Y = 5'd7;
+
+    localparam [4:0] DUNGEON_START_X = 5'd11;
+    localparam [4:0] DUNGEON_START_Y = 5'd7;
+
     localparam [4:0] MAX_X   = 5'd19;
     localparam [4:0] MAX_Y   = 5'd14;
 
@@ -40,13 +54,14 @@ module exploration (clock,resetn,scene,move_pulse,move_dir,player_x,player_y);
             player_x <= START_X;
             player_y <= START_Y;
 
-            previous_scene <= TOWN;
+            previous_scene <= START;
 
-            town_return_x <= START_X;
-            town_return_y <= START_Y;
+            town_return_x <= TOWN_START_X;
+            town_return_y <= TOWN_START_Y;
 
-            dungeon_return_x <= START_X;
-            dungeon_return_y <= START_Y;
+            dungeon_return_x <= DUNGEON_START_X;
+            dungeon_return_y <= DUNGEON_START_Y;
+
         end else begin
             previous_scene <= scene; // Read current scene
 
@@ -70,9 +85,14 @@ module exploration (clock,resetn,scene,move_pulse,move_dir,player_x,player_y);
                         player_y <= town_return_y;
                     end
 
-                    HOUSE1, HOUSE2: begin
-                        player_x <= START_X;
-                        player_y <= START_Y;
+                    HOUSE1: begin
+                        player_x <= HOUSE1_START_X;
+                        player_y <= HOUSE1_START_Y;
+                    end
+
+                    HOUSE2: begin
+                        player_x <= HOUSE2_START_X;
+                        player_y <= HOUSE2_START_Y;
                     end
 
                     DUNGEON: begin
@@ -80,8 +100,8 @@ module exploration (clock,resetn,scene,move_pulse,move_dir,player_x,player_y);
                             player_x <= dungeon_return_x;
                             player_y <= dungeon_return_y;
                         end else begin
-                            player_x <= START_X;
-                            player_y <= START_Y;
+                            player_x <= DUNGEON_START_X;
+                            player_y <= DUNGEON_START_Y;
                         end
                     end
                 endcase
