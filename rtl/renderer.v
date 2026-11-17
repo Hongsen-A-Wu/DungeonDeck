@@ -1,6 +1,11 @@
 // TODO (Zicheng): graphics rendering FSM / sprite ROM and VGA adapter.
 // Renderer receives game outputs; renderer must not modify game state.
 // Agree on resolution and color width before implementing this module.
+
+// VGA renderer: 160x120, 8x8 tiles, 3-bit RGB.
+// Reads game outputs without modifying game state.
+// Basic rendering implemented; sprite ROM is TODO.
+
 module renderer (clk,resetn,scene,scene_ready,player_x,player_y,VGA_R,VGA_G,VGA_B,VGA_HS,VGA_VS,VGA_CLK,VGA_BLANK_N,VGA_SYNC_N);
     input wire clk;
     input wire resetn;
@@ -171,28 +176,28 @@ module renderer (clk,resetn,scene,scene_ready,player_x,player_y,VGA_R,VGA_G,VGA_
 
         end
     end
-    
-    //  VGA adapter.
+    //  VGA adapter according to the file
     vga_adapter #(
-        .RESOLUTION("160x120"),
-        .MONOCHROME("FALSE"),
-        .BITS_PER_COLOUR_CHANNEL(1),
-        .BACKGROUND_IMAGE("black.mif")
-    ) VGA (
-        .resetn(resetn),
-        .clock(clk),
-        .colour(colour),
-        .x(pixel_x),
-        .y(pixel_y),
-        .plot(plot),
-        .VGA_R(VGA_R),
-        .VGA_G(VGA_G),
-        .VGA_B(VGA_B),
-        .VGA_HS(VGA_HS),
-        .VGA_VS(VGA_VS),
-        .VGA_CLK(VGA_CLK),
-        .VGA_BLANK(VGA_BLANK_N),
-        .VGA_SYNC(VGA_SYNC_N)
-    );
+    .RESOLUTION("160x120"),
+    .COLOR_DEPTH(3),
+    .BACKGROUND_IMAGE("black.mif")
+) VGA (
+    .resetn(resetn),
+    .clock(clk),
+
+    .color(colour),
+    .x(pixel_x),
+    .y(pixel_y),
+    .write(plot),
+
+    .VGA_R(VGA_R),
+    .VGA_G(VGA_G),
+    .VGA_B(VGA_B),
+    .VGA_HS(VGA_HS),
+    .VGA_VS(VGA_VS),
+    .VGA_CLK(VGA_CLK),
+    .VGA_BLANK_N(VGA_BLANK_N),
+    .VGA_SYNC_N(VGA_SYNC_N)
+);
 endmodule
 
