@@ -97,4 +97,24 @@ module game_top (CLOCK_50,KEY,SW,LEDR);
     // SW[9]=1: y coordinate on LEDR[7:3]
     // LEDR[2:0] = scene (0 town, 1 house1, 2 house2, 3 dungeon, 4 battle)
     assign LEDR = {2'b00, (SW[9] ? player_y : player_x), scene};
+
+    renderer render (
+    .clk(CLOCK_50),
+    .resetn(resetn),
+
+    .scene(scene),               
+    .scene_ready(scene_ready),
+
+    .player_x(player_x),
+    .player_y(player_y),
+
+    .VGA_R(VGA_R),
+    .VGA_G(VGA_G),
+    .VGA_B(VGA_B),
+    .VGA_HS(VGA_HS),
+    .VGA_VS(VGA_VS),
+    .VGA_CLK(VGA_CLK),
+    .VGA_BLANK_N(VGA_BLANK_N),
+    .VGA_SYNC_N(VGA_SYNC_N)
+);
 endmodule
