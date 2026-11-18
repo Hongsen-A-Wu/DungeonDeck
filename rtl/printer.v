@@ -78,7 +78,6 @@ module printer(
 		house1_pixel  <= house1_rom[pixel_addr];
 		house2_pixel  <= house2_rom[pixel_addr];
 		dungeon_pixel <= dungeon_rom[pixel_addr];
-	 end
     end
     wire [4:0] tile_x;
     wire [4:0] tile_y;
