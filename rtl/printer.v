@@ -1,7 +1,5 @@
 // VGA print: 320x240, 20x15 tiles, 16x16 pixels per tile.
 // 9-bit RGB: 3 bits per colour channel.
-// VGA adapter is instantiated in game_top.
-
 module printer(
     input wire clk,
     input wire resetn,
@@ -14,7 +12,6 @@ module printer(
     output reg [8:0] draw_color,
     output wire draw_write
 );
-
     localparam [2:0] TOWN    = 3'd0;
     localparam [2:0] HOUSE1  = 3'd1;
     localparam [2:0] HOUSE2  = 3'd2;
@@ -41,31 +38,48 @@ module printer(
 
     // Memory of background
     (* ram_init_file = "../data/start.mif" *)
-    reg [8:0] start_rom [0:76799];
-
+    reg [8:0] start_rom [0:76799]; 
     (* ram_init_file = "../data/town.mif" *)
     reg [8:0] town_rom [0:76799];
+	 (* ram_init_file = "../data/house1.mif" *)
+	 reg [8:0] house1_rom [0:76799];
+	 (* ram_init_file = "../data/house2.mif" *)
+	 reg [8:0] house2_rom [0:76799];
+	 (* ram_init_file = "../data/dungeon.mif" *)
+	 reg [8:0] dungeon_rom [0:76799];
 
-
+	 reg [8:0] house1_pixel, house2_pixel, dungeon_pixel;
     reg [8:0] start_pixel;
     reg [8:0] town_pixel;
+	 reg [7:0] next_y;
+    reg [8:0] next_x;
 
-    wire [8:0] next_x = (draw_x == 9'd319) ? 9'd0 : draw_x + 9'd1;
-
-    wire[7:0] next_y = 
-        (draw_x == 9'd319) ? 
-        ((draw_y) == 8'd239 ? 8'd0 : draw_y + 8'd1): draw_y;
-
-    wire [16:0] pixel_addr = 
-        ({9'd0,next_y}<<8)+
-        ({9'd0,next_y}<<6)+
-        {8'd0,next_x};
-
-    always @(posedge clk) begin
-        start_pixel <= start_rom[pixel_addr];
-        town_pixel <= town_rom[pixel_addr];
+	 always @(*) begin
+    if (draw_x == 9'd319)
+        next_x = 9'd0;
+    else
+        next_x = draw_x + 9'd1;
+	 end
+	 always @(*) begin
+    if (draw_x == 9'd319) begin
+        if (draw_y == 8'd239)
+            next_y = 8'd0;
+        else
+            next_y = draw_y + 8'd1;
+    end else begin
+        next_y = draw_y;
     end
+	 end
+    wire [16:0] pixel_addr = ({9'd0,next_y}<<8)+({9'd0,next_y}<<6)+{8'd0,next_x}; //
 
+	 always @(posedge clk) begin
+		start_pixel   <= start_rom[pixel_addr];
+		town_pixel    <= town_rom[pixel_addr];
+		house1_pixel  <= house1_rom[pixel_addr];
+		house2_pixel  <= house2_rom[pixel_addr];
+		dungeon_pixel <= dungeon_rom[pixel_addr];
+	 end
+    end
     wire [4:0] tile_x;
     wire [4:0] tile_y;
     wire [3:0] inside_x;
@@ -104,57 +118,33 @@ module printer(
         end else draw_x <= draw_x + 9'd1;
     end
 
-    always @(*) begin
-        // 1. Background.
-        draw_color = BLACK;
+	 always @(*) begin
+    case (draw_scene)
+        START:   draw_color = start_pixel;
+        TOWN:    draw_color = town_pixel;
+        HOUSE1:  draw_color = house1_pixel;
+        HOUSE2:  draw_color = house2_pixel;
+        DUNGEON: draw_color = dungeon_pixel;
 
-        case (draw_scene)
-            START:   draw_color = start_pixel;
-            TOWN:    draw_color = town_pixel;
-            HOUSE1:  draw_color = BLUE;
-            HOUSE2:  draw_color = CYAN;
-            DUNGEON: draw_color = BLACK;
-            BATTLE: begin
-                if ((draw_x >= 9'd48) && (draw_x < 9'd96) &&
-                    (draw_y >= 8'd96) && (draw_y < 8'd144))
+        BATTLE: begin
+            draw_color = BLACK;
+            if (draw_y >= 8'd96 && draw_y < 8'd144) begin
+                if (draw_x >= 9'd48 && draw_x < 9'd96)
                     draw_color = WHITE;
-                if ((draw_x >= 9'd224) && (draw_x < 9'd272) &&
-                    (draw_y >= 8'd96) && (draw_y < 8'd144))
+                else if (draw_x >= 9'd224 && draw_x < 9'd272)
                     draw_color = RED;
             end
-            VICTORY: draw_color = GREEN;
-            DEFEAT:  draw_color = RED;
-            default: draw_color = MAGENTA;
-        endcase
-        if (exploration_scene) begin
-            // 2. Grid lines.
-
-            /*if ((inside_x == 4'd0) || (inside_y == 4'd0)) begin
-                if (draw_scene == DUNGEON) draw_color = BLUE;
-                else draw_color = BLACK;
-            end*/
-
-            // 3. Doors, exits and enemy.
-            case (draw_scene)
-
-                /*TOWN: begin
-                    if ((tile_x == 5'd4) && (tile_y == 5'd3)) draw_color = BLUE;
-                    if ((tile_x == 5'd15) && (tile_y == 5'd3)) draw_color = CYAN;
-                    if ((tile_x == 5'd10) && (tile_y == 5'd12)) draw_color = MAGENTA;
-                end*/
-
-                HOUSE1, HOUSE2:
-                    if ((tile_x == 5'd10) && (tile_y == 5'd13)) draw_color = YELLOW;
-                DUNGEON:
-                    if ((tile_x == 5'd10) && (tile_y == 5'd5)) draw_color = RED;
-                default: begin end
-            endcase
-            // 4. Player: 12x12 white square, drawn last.
-            if ((tile_x == draw_player_x) && (tile_y == draw_player_y) &&
-                (inside_x >= 4'd2) && (inside_x <= 4'd13) &&
-                (inside_y >= 4'd2) && (inside_y <= 4'd13))
-                draw_color = WHITE;
         end
-    end
 
+        VICTORY: draw_color = GREEN;
+        DEFEAT:  draw_color = RED;
+        default: draw_color = MAGENTA;
+    endcase
+    // Draw the player last, on top of the exploration map.
+    if (exploration_scene &&
+        tile_x == draw_player_x && tile_y == draw_player_y &&
+        inside_x >= 4'd2 && inside_x <= 4'd13 &&
+        inside_y >= 4'd2 && inside_y <= 4'd13)
+        draw_color = WHITE;
+end
 endmodule
