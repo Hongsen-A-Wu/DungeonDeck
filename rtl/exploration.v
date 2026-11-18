@@ -6,10 +6,10 @@
 module exploration (clock,resetn,scene,move_pulse,move_dir,player_x,player_y);
 
     input wire clock; // CLOCK_50
-    input wire resetn; // game_top.v, from outside input device
-    input wire [2:0] scene; // output from game_fsm.v
+    input wire resetn; 
+    input wire [2:0] scene; // output from game_fsm.v 
     input wire move_pulse; // output from buttom pulse
-    input wire [1:0] move_dir; // Input from outside device
+    input wire [1:0] move_dir; 
     output reg [4:0] player_x;
     output reg [4:0] player_y;
 
@@ -25,8 +25,6 @@ module exploration (clock,resetn,scene,move_pulse,move_dir,player_x,player_y);
     localparam [4:0] TOWN_START_X = 5'd11;
     localparam [4:0] TOWN_START_Y = 5'd7;
 
-
-    // 修改
     localparam [4:0] HOUSE1_START_X = 5'd11;
     localparam [4:0] HOUSE1_START_Y = 5'd7;
 
@@ -48,12 +46,11 @@ module exploration (clock,resetn,scene,move_pulse,move_dir,player_x,player_y);
     // Position to restore when returning from battle.
     reg [4:0] dungeon_return_x;
     reg [4:0] dungeon_return_y;
-
+	 
     always @(posedge clock or negedge resetn) begin
         if (!resetn) begin
-            player_x <= START_X;
-            player_y <= START_Y;
-
+            player_x <= TOWN_START_X; // exist but won't be drawn
+				player_y <= TOWN_START_Y; // exist but won't be drawn since exploration_scene = 0
             previous_scene <= START;
 
             town_return_x <= TOWN_START_X;
@@ -64,7 +61,6 @@ module exploration (clock,resetn,scene,move_pulse,move_dir,player_x,player_y);
 
         end else begin
             previous_scene <= scene; // Read current scene
-
             // scene changes before move.
             if (scene != previous_scene) begin
 
@@ -78,7 +74,6 @@ module exploration (clock,resetn,scene,move_pulse,move_dir,player_x,player_y);
                     dungeon_return_x <= player_x;
                     dungeon_return_y <= player_y;
                 end
-
                 case (scene)
                     TOWN: begin
                         player_x <= town_return_x;
@@ -94,7 +89,6 @@ module exploration (clock,resetn,scene,move_pulse,move_dir,player_x,player_y);
                         player_x <= HOUSE2_START_X;
                         player_y <= HOUSE2_START_Y;
                     end
-
                     DUNGEON: begin
                         if (previous_scene == BATTLE) begin
                             player_x <= dungeon_return_x;
@@ -105,10 +99,8 @@ module exploration (clock,resetn,scene,move_pulse,move_dir,player_x,player_y);
                         end
                     end
                 endcase
-
             end else if (move_pulse) begin
-
-                // Movement is enabled only in exploration scenes.
+				// Movement is enabled only in exploration scenes.
                 case (scene)
                     TOWN, HOUSE1, HOUSE2, DUNGEON: begin
                         case (move_dir)
@@ -116,17 +108,14 @@ module exploration (clock,resetn,scene,move_pulse,move_dir,player_x,player_y);
                                 if (player_y > 5'd0)
                                     player_y <= player_y - 5'd1;
                             end
-
                             2'b01: begin
                                 if (player_y < MAX_Y)
                                     player_y <= player_y + 5'd1;
                             end
-
                             2'b10: begin
                                 if (player_x > 5'd0)
                                     player_x <= player_x - 5'd1;
                             end
-
                             2'b11: begin
                                 if (player_x < MAX_X)
                                     player_x <= player_x + 5'd1;
