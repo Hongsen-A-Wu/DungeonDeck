@@ -11,7 +11,7 @@
 
 module input_decoder (clock,resetn,scan_code,scan_valid,
                       move_up,move_down,move_left,move_right,
-                      confirm,back);
+                      confirm,back,restart);
 
     input      clock;
     input      resetn;
@@ -23,6 +23,7 @@ module input_decoder (clock,resetn,scan_code,scan_valid,
 
     output reg confirm;
     output reg back;
+    output reg restart;
 
     reg break_pending; // Used to record if a key is released
     reg extended_pending; // Used to ignore extended key's inputs
@@ -38,6 +39,8 @@ module input_decoder (clock,resetn,scan_code,scan_valid,
             move_right       <= 1'b0;
             confirm          <= 1'b0;
             back             <= 1'b0;
+            restart          <= 1'b0;
+
         end else begin
             move_up    <= 1'b0;
             move_down  <= 1'b0;
@@ -45,6 +48,8 @@ module input_decoder (clock,resetn,scan_code,scan_valid,
             move_right <= 1'b0;
             confirm    <= 1'b0;
             back       <= 1'b0;
+            restart    <= 1'b0;
+
             if (scan_valid) begin
                 if (scan_code == 8'hE0) begin
                     extended_pending <= 1'b1;
@@ -59,6 +64,8 @@ module input_decoder (clock,resetn,scan_code,scan_valid,
                             8'h23: move_right <= 1'b1; // D
                             8'h5A: confirm    <= 1'b1; // Enter
                             8'h76: back       <= 1'b1; // Escape
+                            8'h2D: restart    <= 1'b1; // R
+
                             default: ;
                         endcase
                     end
