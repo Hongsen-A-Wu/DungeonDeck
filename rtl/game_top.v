@@ -35,6 +35,38 @@ module game_top (CLOCK_50,KEY,SW,PS2_CLK,PS2_DAT,LEDR,VGA_R,VGA_G,VGA_B,VGA_HS,V
     wire [7:0] scan_code;
     wire scan_valid;
 
+    localparam [2:0] SCENE_HOUSE1 = 3'd1;
+    localparam [2:0] SCENE_HOUSE2 = 3'd2;
+    localparam [2:0] SCENE_DUNGEON = 3'd3;
+    localparam [1:0] DLG_NONE = 2'd0;
+    localparam [1:0] DLG_HOUSE1 = 2'd1;
+    localparam [1:0] DLG_HOUSE2 = 2'd2;
+    localparam [1:0] DLG_MONSTER = 2'd3;
+
+    // Character positions in the 160x120 backgrounds (20x15 tiles, 8px/tile).
+    localparam [4:0] HOUSE1_NPC_X = 5'd13, HOUSE1_NPC_Y = 5'd6;
+    localparam [4:0] HOUSE2_NPC_X = 5'd13, HOUSE2_NPC_Y = 5'd6;
+    localparam [4:0] MONSTER_X = 5'd10, MONSTER_Y = 5'd8;
+
+    wire dialogue_active;
+    wire [1:0] dialogue_id;
+    wire [1:0] dialogue_page;
+    wire [1:0] dialogue_start_id;
+    wire dialogue_start_allowed;
+    wire dialogue_finished_pulse;
+
+    // Manhattan distance exactly 1: must be immediately above/below/left/right.
+    function adjacent4;
+        input [4:0] ax, ay, bx, by;
+        begin
+            adjacent4 = ((ax == bx) &&
+                         ((ay + 5'd1 == by) || (by + 5'd1 == ay))) ||
+                        ((ay == by) &&
+                         ((ax + 5'd1 == bx) || (bx + 5'd1 == ax)));
+        end
+    endfunction
+
+
     wire move_up, move_down, move_left, move_right;
     wire confirm, back;
 
@@ -102,8 +134,55 @@ module game_top (CLOCK_50,KEY,SW,PS2_CLK,PS2_DAT,LEDR,VGA_R,VGA_G,VGA_B,VGA_HS,V
         move_left ? 2'b10 :
                     2'b11;
 
-    assign interact_pulse = confirm;
-    assign back_pulse = back;
+    // Start conversation only beside the actual actor, never at an exit.
+    wire near_house1_npc = scene_ready && (scene == SCENE_HOUSE1) &&
+        adjacent4(player_x, player_y, HOUSE1_NPC_X, HOUSE1_NPC_Y);
+    wire near_house2_npc = scene_ready && (scene == SCENE_HOUSE2) &&
+        adjacent4(player_x, player_y, HOUSE2_NPC_X, HOUSE2_NPC_Y);
+    wire near_monster = scene_ready && (scene == SCENE_DUNGEON) &&
+        adjacent4(player_x, player_y, MONSTER_X, MONSTER_Y);
+
+    assign dialogue_start_allowed = near_house1_npc || near_house2_npc || near_monster;
+    assign dialogue_start_id = near_house1_npc ? DLG_HOUSE1 :
+                               near_house2_npc ? DLG_HOUSE2 :
+                               near_monster ? DLG_MONSTER : DLG_NONE;
+
+    dialogue_controller u_dialogue_controller (
+        .clock(CLOCK_50),
+        .resetn(resetn),
+        .start_allowed(dialogue_start_allowed),
+        .start_dialogue_id(dialogue_start_id),
+        .confirm_pulse(confirm),
+        .back_pulse(back),
+        .dialogue_active(dialogue_active),
+        .dialogue_id(dialogue_id),
+        .dialogue_page(dialogue_page),
+        .dialogue_finished_pulse(dialogue_finished_pulse)
+    );
+
+    // Next tile candidate; do not allow walking over a painted NPC/monster.
+    reg [4:0] next_player_x, next_player_y;
+    always @(*) begin
+        next_player_x = player_x;
+        next_player_y = player_y;
+        case (move_dir)
+            2'b00: if (player_y > 5'd0)  next_player_y = player_y - 5'd1;
+            2'b01: if (player_y < 5'd14) next_player_y = player_y + 5'd1;
+            2'b10: if (player_x > 5'd0)  next_player_x = player_x - 5'd1;
+            2'b11: if (player_x < 5'd19) next_player_x = player_x + 5'd1;
+        endcase
+    end
+    wire move_into_character =
+        ((scene == SCENE_HOUSE1) && (next_player_x == HOUSE1_NPC_X) &&
+                                     (next_player_y == HOUSE1_NPC_Y)) ||
+        ((scene == SCENE_HOUSE2) && (next_player_x == HOUSE2_NPC_X) &&
+                                     (next_player_y == HOUSE2_NPC_Y)) ||
+        ((scene == SCENE_DUNGEON) && (next_player_x == MONSTER_X) &&
+                                      (next_player_y == MONSTER_Y));
+
+    // Enter used by dialogue must not also be received by game_fsm.
+    assign interact_pulse = confirm && scene_ready && !dialogue_active && !dialogue_start_allowed;
+    assign back_pulse = back && !dialogue_active;
 
     reg [1:0] player_facing;
 
@@ -118,7 +197,8 @@ module game_top (CLOCK_50,KEY,SW,PS2_CLK,PS2_DAT,LEDR,VGA_R,VGA_G,VGA_B,VGA_HS,V
     .clock(CLOCK_50),
     .resetn(resetn),
     .scene(scene),
-    .move_pulse(move_pulse && scene_ready && !interact_pulse && !back_pulse),
+    .move_pulse(move_pulse && scene_ready && !dialogue_active &&
+                !interact_pulse && !back_pulse && !move_into_character),
     .move_dir(move_dir),
     .player_x(player_x),
     .player_y(player_y)
@@ -137,7 +217,9 @@ module game_top (CLOCK_50,KEY,SW,PS2_CLK,PS2_DAT,LEDR,VGA_R,VGA_G,VGA_B,VGA_HS,V
     wire at_house2_exit = 
         (player_x == 5'd9) && (player_y == 5'd14)||(player_x == 5'd10) && (player_y == 5'd14);
 
-    wire at_enemy = (player_x == 5'd10) && (player_y == 5'd5);
+    // Combat NOT enabled yet: the goblin currently opens dialogue only.
+    // Future hook: dialogue_finished_pulse && dialogue_id==DLG_MONSTER.
+    wire at_enemy = 1'b0;
 
     vga_adapter #(
         // Change the size of background
@@ -194,6 +276,9 @@ module game_top (CLOCK_50,KEY,SW,PS2_CLK,PS2_DAT,LEDR,VGA_R,VGA_G,VGA_B,VGA_HS,V
         .player_x(player_x),
         .player_y(player_y),
         .move_dir(player_facing),
+        .dialogue_active(dialogue_active),
+        .dialogue_id(dialogue_id),
+        .dialogue_page(dialogue_page),
 
         .draw_x(draw_x),
         .draw_y(draw_y),

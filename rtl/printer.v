@@ -1,4 +1,4 @@
-// VGA print: 320x240, 20x15 tiles, 16x16 pixels per tile. -> 160x120, 20x15 tiles, 8x8 pixels per tile
+// VGA print: 160x120, 20x15 tiles, 8x8 pixels per tile.
 // 9-bit RGB: 3 bits per colour channel.
 module printer(
     input wire clk,
@@ -7,9 +7,12 @@ module printer(
     input wire scene_ready,
     input wire [4:0] player_x,
     input wire [4:0] player_y,
-    input wire [1:0] move_dir, // to deicide which mif use when facing different direction
-    output reg [8:0] draw_x,
-    output reg [7:0] draw_y,
+    input wire dialogue_active,
+    input wire [1:0] move_dir,
+    input wire [1:0] dialogue_id,
+    input wire [1:0] dialogue_page,
+    output reg [7:0] draw_x,
+    output reg [6:0] draw_y,
     output reg [8:0] draw_color,
     output wire draw_write
 );
@@ -92,18 +95,16 @@ module printer(
     end
     wire [4:0] tile_x;
     wire [4:0] tile_y;
-    wire [3:0] inside_x;
-    wire [3:0] inside_y;
+    wire [2:0] inside_x;
+    wire [2:0] inside_y;
     wire exploration_scene;
 
-    // Divide pixel coordinates by 16.
+    // Divide pixel coordinates by 8.
     assign tile_x = draw_x[7:3];
     assign tile_y = {1'b0, draw_y[6:3]};
-    /*assign tile_x = draw_x[8:4];
-    assign tile_y = {1'b0, draw_y[7:4]};*/
 
-    /*assign inside_x = draw_x[3:0];
-    assign inside_y = draw_y[3:0];*/
+    assign inside_x = draw_x[2:0];
+    assign inside_y = draw_y[2:0];
 
     assign exploration_scene =(draw_scene == TOWN) ||(draw_scene == HOUSE1) ||(draw_scene == HOUSE2) || (draw_scene == DUNGEON);
 
@@ -115,22 +116,33 @@ module printer(
             draw_player_x <= 5'd0;
             draw_player_y <= 5'd0;
 
-            draw_x <= 9'd0;
-            draw_y <= 8'd0;
-        end else if (draw_x == 9'd159) begin
-            draw_x <= 9'd0;
-            if (draw_y == 8'd119) begin
-                draw_y <= 8'd0;
+            draw_x <= 8'd0;
+            draw_y <= 7'd0;
+        end else if (draw_x == 8'd159) begin
+            draw_x <= 8'd0;
+            if (draw_y == 7'd119) begin
+                draw_y <= 7'd0;
                 if (scene_ready) begin
                     draw_scene <= scene;
                     draw_player_x <= player_x;
                     draw_player_y <= player_y;
                 end
-            end else draw_y <= draw_y + 8'd1;
-        end else draw_x <= draw_x + 9'd1;
+            end else draw_y <= draw_y + 7'd1;
+        end else draw_x <= draw_x + 8'd1;
     end
 
-	always @(*) begin
+    wire dialogue_overlay_valid;
+    wire [8:0] dialogue_overlay_color;
+    text_printer u_text_printer (
+        .dialogue_active(dialogue_active),
+        .dialogue_id(dialogue_id),
+        .dialogue_page(dialogue_page),
+        .pixel_x(draw_x), .pixel_y(draw_y),
+        .overlay_valid(dialogue_overlay_valid),
+        .overlay_color(dialogue_overlay_color)
+    );
+
+		always @(*) begin
     case (draw_scene)
         START:   draw_color = start_pixel;
         TOWN:    draw_color = town_pixel;
@@ -154,7 +166,10 @@ module printer(
     // Draw the player last, on top of the exploration map.
     if (exploration_scene && tile_x == draw_player_x && tile_y == draw_player_y && player_pixel[9]) 
     begin
-    draw_color = player_pixel[8:0];
+        draw_color = player_pixel[8:0];
     end
-end
+
+    if (dialogue_overlay_valid)
+        draw_color = dialogue_overlay_color;
+    end
 endmodule
