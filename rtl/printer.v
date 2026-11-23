@@ -36,33 +36,35 @@ module printer(
     reg [4:0] draw_player_x;
     reg [4:0] draw_player_y;
 
+    // Change the size from 76799 to 19199
     // Memory of background
     (* ram_init_file = "../data/start.mif" *)
-    reg [8:0] start_rom [0:76799]; 
+    reg [8:0] start_rom [0:19199]; 
     (* ram_init_file = "../data/town.mif" *)
-    reg [8:0] town_rom [0:76799];
-	 (* ram_init_file = "../data/house1.mif" *)
-	 reg [8:0] house1_rom [0:76799];
-	 (* ram_init_file = "../data/house2.mif" *)
-	 reg [8:0] house2_rom [0:76799];
-	 (* ram_init_file = "../data/dungeon.mif" *)
-	 reg [8:0] dungeon_rom [0:76799];
+    reg [8:0] town_rom [0:19199];
+	(* ram_init_file = "../data/house1.mif" *)
+	reg [8:0] house1_rom [0:19199];
+	(* ram_init_file = "../data/house2.mif" *)
+	reg [8:0] house2_rom [0:19199];
+	(* ram_init_file = "../data/dungeon.mif" *)
+	reg [8:0] dungeon_rom [0:19199];
 
-	 reg [8:0] house1_pixel, house2_pixel, dungeon_pixel;
-    reg [8:0] start_pixel;
-    reg [8:0] town_pixel;
-	 reg [7:0] next_y;
-    reg [8:0] next_x;
+    // Change the size to keep the tile constant 
+	reg [7:0] house1_pixel, house2_pixel, dungeon_pixel;
+    reg [7:0] start_pixel;
+    reg [7:0] town_pixel;
+	reg [6:0] next_y;
+    reg [7:0] next_x;
 
 	 always @(*) begin
-    if (draw_x == 9'd319)
+    if (draw_x == 9'd159)
         next_x = 9'd0;
     else
         next_x = draw_x + 9'd1;
 	 end
 	 always @(*) begin
-    if (draw_x == 9'd319) begin
-        if (draw_y == 8'd239)
+    if (draw_x == 9'd159) begin
+        if (draw_y == 8'd119)
             next_y = 8'd0;
         else
             next_y = draw_y + 8'd1;
@@ -104,9 +106,9 @@ module printer(
 
             draw_x <= 9'd0;
             draw_y <= 8'd0;
-        end else if (draw_x == 9'd319) begin
+        end else if (draw_x == 9'd159) begin
             draw_x <= 9'd0;
-            if (draw_y == 8'd239) begin
+            if (draw_y == 8'd119) begin
                 draw_y <= 8'd0;
                 if (scene_ready) begin
                     draw_scene <= scene;
@@ -117,7 +119,7 @@ module printer(
         end else draw_x <= draw_x + 9'd1;
     end
 
-	 always @(*) begin
+	always @(*) begin
     case (draw_scene)
         START:   draw_color = start_pixel;
         TOWN:    draw_color = town_pixel;
@@ -125,6 +127,7 @@ module printer(
         HOUSE2:  draw_color = house2_pixel;
         DUNGEON: draw_color = dungeon_pixel;
 
+        // Placeholder
         BATTLE: begin
             draw_color = BLACK;
             if (draw_y >= 8'd96 && draw_y < 8'd144) begin

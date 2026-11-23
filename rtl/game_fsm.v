@@ -33,8 +33,7 @@ module game_fsm (clock,resetn,
     parameter BATTLE  = 3'd4;
     parameter VICTORY = 3'd5;
     parameter DEFEAT  = 3'd6;
-
-    parameter START = 3'd7;
+    parameter START   = 3'd7;
 
     always @(posedge clock or negedge resetn) begin
         if (!resetn) begin

@@ -22,8 +22,10 @@ module game_top (CLOCK_50,KEY,SW,PS2_CLK,PS2_DAT,LEDR,VGA_R,VGA_G,VGA_B,VGA_HS,V
     wire [2:0] scene;
     wire [4:0] player_x, player_y;
 
-    wire [8:0] draw_x; // 0~319
-    wire [7:0] draw_y; // 0~239
+    // Change the size
+    wire [7:0] draw_x; // 0~159
+    wire [6:0] draw_y; // 0~119
+
     wire [8:0] draw_color; // 9 bits RGB
     wire vga_write;
 
@@ -129,7 +131,8 @@ module game_top (CLOCK_50,KEY,SW,PS2_CLK,PS2_DAT,LEDR,VGA_R,VGA_G,VGA_B,VGA_HS,V
     wire at_enemy = (player_x == 5'd10) && (player_y == 5'd5);
 
     vga_adapter #(
-        .RESOLUTION("320x240"),
+        // Change the size of background
+        .RESOLUTION("160x120"),
         .COLOR_DEPTH(9)
     )VGA(
         .resetn(resetn),
