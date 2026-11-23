@@ -184,15 +184,6 @@ module game_top (CLOCK_50,KEY,SW,PS2_CLK,PS2_DAT,LEDR,VGA_R,VGA_G,VGA_B,VGA_HS,V
     assign interact_pulse = confirm && scene_ready && !dialogue_active && !dialogue_start_allowed;
     assign back_pulse = back && !dialogue_active;
 
-    reg [1:0] player_facing;
-
-    always @(posedge CLOCK_50 or negedge resetn) begin
-    if (!resetn)
-        player_facing <= 2'b11;  //default right
-    else if (move_pulse && scene_ready && !interact_pulse && !back_pulse)
-        player_facing <= move_dir;
-    end
-
    exploration explore (
     .clock(CLOCK_50),
     .resetn(resetn),
@@ -212,10 +203,15 @@ module game_top (CLOCK_50,KEY,SW,PS2_CLK,PS2_DAT,LEDR,VGA_R,VGA_G,VGA_B,VGA_HS,V
         (player_x == 5'd4) && (player_y == 5'd12);
     wire at_dungeon = 
         (player_x == 5'd18) && (player_y == 5'd7);
-    wire at_house1_exit = 
-        (player_x == 5'd9) && (player_y == 5'd14)||(player_x == 5'd10) && (player_y == 5'd14);
-    wire at_house2_exit = 
-        (player_x == 5'd9) && (player_y == 5'd14)||(player_x == 5'd10) && (player_y == 5'd14);
+
+    // All three room exits: bottom row, center two tiles (9,14) or (10,14)
+    // Standing there alone does not leave; the FSM also requires Enter
+    wire at_bottom_center_door = (player_y == 5'd14) &&
+                                 ((player_x == 5'd9) || (player_x == 5'd10));
+                                 
+    wire at_house1_exit = (scene == SCENE_HOUSE1) && at_bottom_center_door;
+    wire at_house2_exit = (scene == SCENE_HOUSE2) && at_bottom_center_door;
+    wire at_dungeon_exit = (scene == SCENE_DUNGEON) && at_bottom_center_door;
 
     // Combat NOT enabled yet: the goblin currently opens dialogue only.
     // Future hook: dialogue_finished_pulse && dialogue_id==DLG_MONSTER.
@@ -256,6 +252,7 @@ module game_top (CLOCK_50,KEY,SW,PS2_CLK,PS2_DAT,LEDR,VGA_R,VGA_G,VGA_B,VGA_HS,V
         .at_house1_exit(at_house1_exit),
         .at_house2_exit(at_house2_exit),
         .at_dungeon(at_dungeon),
+        .at_dungeon_exit(at_dungeon_exit),
         .at_enemy(at_enemy),
 
         .battle_win(1'b0),   // TODO: connect combat logic in Week 2/3
@@ -275,7 +272,6 @@ module game_top (CLOCK_50,KEY,SW,PS2_CLK,PS2_DAT,LEDR,VGA_R,VGA_G,VGA_B,VGA_HS,V
         .scene_ready(scene_ready),
         .player_x(player_x),
         .player_y(player_y),
-        .move_dir(player_facing),
         .dialogue_active(dialogue_active),
         .dialogue_id(dialogue_id),
         .dialogue_page(dialogue_page),

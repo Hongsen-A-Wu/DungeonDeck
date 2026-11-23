@@ -7,20 +7,20 @@ module game_fsm (clock,resetn,
                  interact_pulse,back_pulse,
                  at_house1,at_house2,
                  at_house1_exit,at_house2_exit,
-                 at_dungeon,at_enemy,
+                 at_dungeon,at_dungeon_exit,at_enemy,
                  battle_win,battle_lose,
                  scene);
     
     input clock,resetn;
 
-    // interact_pulse is created from buttom_pulse.v
+    // interact_pulse is the Enter key event (one clock pulse)
     // back_pulse is created from input_decoder.v
     input interact_pulse,back_pulse;
 
-    // Calculate from the player's coordiate
+    // Tile position flags from game_top.v
     input at_house1,at_house2,
           at_house1_exit,at_house2_exit,    
-          at_dungeon,at_enemy;
+          at_dungeon,at_dungeon_exit,at_enemy;
     
     input battle_win,battle_lose;
     
@@ -56,17 +56,17 @@ module game_fsm (clock,resetn,
                 end
 
                 HOUSE1: begin
-                    if(back_pulse && at_house1_exit)
+                    if(interact_pulse && at_house1_exit)
                         scene <= TOWN;  
                 end
 
                 HOUSE2: begin
-                    if(back_pulse && at_house2_exit)
+                    if(interact_pulse && at_house2_exit)
                         scene <= TOWN;
                 end
 
                 DUNGEON: begin
-                    if (back_pulse) 
+                    if (interact_pulse && at_dungeon_exit)
                         scene <= TOWN;
                     else if (interact_pulse && at_enemy) 
                         scene <= BATTLE;

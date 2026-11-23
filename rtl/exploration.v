@@ -32,7 +32,7 @@ module exploration (clock,resetn,scene,move_pulse,move_dir,player_x,player_y);
     localparam [4:0] HOUSE2_START_Y = 5'd14;
 
     localparam [4:0] DUNGEON_START_X = 5'd10;
-    localparam [4:0] DUNGEON_START_Y = 5'd4;
+    localparam [4:0] DUNGEON_START_Y = 5'd14;
 
     localparam [4:0] MAX_X   = 5'd19;
     localparam [4:0] MAX_Y   = 5'd14;
