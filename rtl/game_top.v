@@ -105,6 +105,15 @@ module game_top (CLOCK_50,KEY,SW,PS2_CLK,PS2_DAT,LEDR,VGA_R,VGA_G,VGA_B,VGA_HS,V
     assign interact_pulse = confirm;
     assign back_pulse = back;
 
+    reg [1:0] player_facing;
+
+    always @(posedge CLOCK_50 or negedge resetn) begin
+    if (!resetn)
+        player_facing <= 2'b11;  //default right
+    else if (move_pulse && scene_ready && !interact_pulse && !back_pulse)
+        player_facing <= move_dir;
+    end
+
    exploration explore (
     .clock(CLOCK_50),
     .resetn(resetn),
@@ -184,6 +193,7 @@ module game_top (CLOCK_50,KEY,SW,PS2_CLK,PS2_DAT,LEDR,VGA_R,VGA_G,VGA_B,VGA_HS,V
         .scene_ready(scene_ready),
         .player_x(player_x),
         .player_y(player_y),
+        .move_dir(player_facing),
 
         .draw_x(draw_x),
         .draw_y(draw_y),

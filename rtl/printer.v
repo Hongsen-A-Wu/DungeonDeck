@@ -1,4 +1,4 @@
-// VGA print: 320x240, 20x15 tiles, 16x16 pixels per tile.
+// VGA print: 320x240, 20x15 tiles, 16x16 pixels per tile. -> 160x120, 20x15 tiles, 8x8 pixels per tile
 // 9-bit RGB: 3 bits per colour channel.
 module printer(
     input wire clk,
@@ -7,6 +7,7 @@ module printer(
     input wire scene_ready,
     input wire [4:0] player_x,
     input wire [4:0] player_y,
+    input wire [1:0] move_dir, // to deicide which mif use when facing different direction
     output reg [8:0] draw_x,
     output reg [7:0] draw_y,
     output reg [8:0] draw_color,
@@ -50,36 +51,44 @@ module printer(
 	reg [8:0] dungeon_rom [0:19199];
 
     // Change the size to keep the tile constant 
-	reg [7:0] house1_pixel, house2_pixel, dungeon_pixel;
+	/*reg [7:0] house1_pixel, house2_pixel, dungeon_pixel;
     reg [7:0] start_pixel;
-    reg [7:0] town_pixel;
+    reg [7:0] town_pixel;*/
 	reg [6:0] next_y;
     reg [7:0] next_x;
+    reg [8:0] start_pixel, town_pixel;
+    reg [8:0] house1_pixel, house2_pixel, dungeon_pixel;
 
 	 always @(*) begin
     if (draw_x == 9'd159)
-        next_x = 9'd0;
+        next_x = 8'd0;
     else
-        next_x = draw_x + 9'd1;
+        next_x = draw_x[7:0] + 8'd1;
 	 end
 	 always @(*) begin
     if (draw_x == 9'd159) begin
         if (draw_y == 8'd119)
-            next_y = 8'd0;
+            next_y = 7'd0;
         else
-            next_y = draw_y + 8'd1;
+            next_y = draw_y[6:0] + 7'd1;
     end else begin
-        next_y = draw_y;
+        next_y = draw_y[6:0];
     end
-	 end
-    wire [16:0] pixel_addr = ({9'd0,next_y}<<8)+({9'd0,next_y}<<6)+{8'd0,next_x}; //
+	end
+    wire [14:0] pixel_addr = !resetn ? 15'd0 :next_y * 15'd160 + next_x;
+    //wire [16:0] pixel_addr = ({9'd0,next_y}<<8)+({9'd0,next_y}<<6)+{8'd0,next_x}; 
+    (* ram_init_file = "../data/player.mif" *)
+    reg [9:0] player_rom [0:255];
+    reg [9:0] player_pixel;
+    wire [7:0] player_addr = !resetn ? 8'd0 :{move_dir, next_y[2:0], next_x[2:0]}; // 这行用高 2 位选方向、低 6 位选该方向图里的像素
 
-	 always @(posedge clk) begin
+	always @(posedge clk) begin
 		start_pixel   <= start_rom[pixel_addr];
 		town_pixel    <= town_rom[pixel_addr];
 		house1_pixel  <= house1_rom[pixel_addr];
 		house2_pixel  <= house2_rom[pixel_addr];
 		dungeon_pixel <= dungeon_rom[pixel_addr];
+        player_pixel <= player_rom[player_addr];
     end
     wire [4:0] tile_x;
     wire [4:0] tile_y;
@@ -88,11 +97,13 @@ module printer(
     wire exploration_scene;
 
     // Divide pixel coordinates by 16.
-    assign tile_x = draw_x[8:4];
-    assign tile_y = {1'b0, draw_y[7:4]};
+    assign tile_x = draw_x[7:3];
+    assign tile_y = {1'b0, draw_y[6:3]};
+    /*assign tile_x = draw_x[8:4];
+    assign tile_y = {1'b0, draw_y[7:4]};*/
 
-    assign inside_x = draw_x[3:0];
-    assign inside_y = draw_y[3:0];
+    /*assign inside_x = draw_x[3:0];
+    assign inside_y = draw_y[3:0];*/
 
     assign exploration_scene =(draw_scene == TOWN) ||(draw_scene == HOUSE1) ||(draw_scene == HOUSE2) || (draw_scene == DUNGEON);
 
@@ -129,13 +140,11 @@ module printer(
 
         // Placeholder
         BATTLE: begin
-            draw_color = BLACK;
-            if (draw_y >= 8'd96 && draw_y < 8'd144) begin
-                if (draw_x >= 9'd48 && draw_x < 9'd96)
-                    draw_color = WHITE;
-                else if (draw_x >= 9'd224 && draw_x < 9'd272)
-                    draw_color = RED;
-            end
+        draw_color = BLACK;
+        if (draw_y >= 8'd48 && draw_y < 8'd72) begin
+            if (draw_x >= 9'd24 && draw_x < 9'd48) draw_color = WHITE;
+            else if (draw_x >= 9'd112 && draw_x < 9'd136) draw_color = RED;
+        end
         end
 
         VICTORY: draw_color = GREEN;
@@ -143,10 +152,9 @@ module printer(
         default: draw_color = MAGENTA;
     endcase
     // Draw the player last, on top of the exploration map.
-    if (exploration_scene &&
-        tile_x == draw_player_x && tile_y == draw_player_y &&
-        inside_x >= 4'd2 && inside_x <= 4'd13 &&
-        inside_y >= 4'd2 && inside_y <= 4'd13)
-        draw_color = WHITE;
+    if (exploration_scene && tile_x == draw_player_x && tile_y == draw_player_y && player_pixel[9]) 
+    begin
+    draw_color = player_pixel[8:0];
+    end
 end
 endmodule
