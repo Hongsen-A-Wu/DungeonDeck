@@ -1,11 +1,11 @@
 // Compact 5x7 glyphs placed inside 8x8 character cells.
 // Uppercase ASCII, digits and common punctuation. No separate font MIF.
-module font (
-    input wire [7:0] ascii_code,
-    input wire [2:0] pixel_col,
-    input wire [2:0] pixel_row,
-    output wire pixel_on
-);
+module font (ascii_code,pixel_col,pixel_row,pixel_on);
+    input wire [7:0] ascii_code;
+    input wire [2:0] pixel_col;
+    input wire [2:0] pixel_row;
+    output wire pixel_on;
+
     reg [34:0] glyph;
     wire [5:0] bit_index = (pixel_row * 6'd5) + pixel_col;
 
@@ -53,11 +53,12 @@ module font (
             8'h3F: glyph = 35'b01110100010000100010001000000000100; // ?
             8'h3A: glyph = 35'b00000001000010000000001000010000000; // :
             8'h2D: glyph = 35'b00000000000000011111000000000000000; // -
-            8'h27: glyph = 35'b00100001000001000000000000000000000; // apostrophe
+            8'h27: glyph = 35'b00100001000001000000000000000000000; // ‘
             default: glyph = 35'd0; // space / unsupported ASCII
         endcase
     end
 
+    // Judge if the pixel in 5*7 block
     assign pixel_on = ((pixel_col < 3'd5) && (pixel_row < 3'd7))
                    ? glyph[6'd34 - bit_index] : 1'b0;
 endmodule
