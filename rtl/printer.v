@@ -1,5 +1,7 @@
 // VGA print: 320x240, 20x15 tiles, 16x16 pixels per tile. -> 160x120, 20x15 tiles, 8x8 pixels per tile
 // 9-bit RGB: 3 bits per colour channel.
+
+// 补充 Battle Display 模块，周二晚上共同完成
 module printer(
     input wire clk,
     input wire resetn,
