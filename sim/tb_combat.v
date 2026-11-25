@@ -27,11 +27,18 @@ module tb_combat;
     localparam [2:0] ENEMY_WAIT  = 3'd6;
     localparam [2:0] FINISHED    = 3'd7;
 
+    // Match the local game configuration (50 HP, 30 HP, 4 energy).
+    localparam integer P_MAX = 50, E_MAX = 30, TURN_EN = 4;
+    localparam integer STRIKE_COST = 1, STRIKE_DAMAGE = 6;
+    localparam integer WIN_HITS = (E_MAX + STRIKE_DAMAGE - 1)/STRIKE_DAMAGE;
+    localparam integer LOSE_HITS = (P_MAX + STRIKE_DAMAGE - 1)/STRIKE_DAMAGE;
+
     localparam [3:0] STRIKE = 4'd0;
 
     always #5 clk=~clk;
 
-    combat dut (
+    combat #(.PLAYER_MAX_HP(P_MAX), .ENEMY_MAX_HP(E_MAX),
+             .ENERGY_PER_TURN(TURN_EN)) dut (
         .clock(clk), .resetn(resetn), .start_battle(start_battle),
         .play_card_pulse(play_card_pulse), .end_turn_pulse(end_turn_pulse),
         .player_turn_start_pulse(player_turn_start_pulse),
@@ -100,8 +107,8 @@ module tb_combat;
             player_selected_index=0;
             tick;
             check(dut.state == PLAYER_PREP && player_turn, "Start -> PLAYER_PREP");
-            check(player_hp == 100 && enemy_hp == 50, "Initial HP");
-            check(player_energy == 3 && enemy_energy == 0, "Initial energy");
+            check(player_hp == P_MAX && enemy_hp == E_MAX, "Initial HP");
+            check(player_energy == TURN_EN && enemy_energy == 0, "Initial energy");
             check(player_block == 0 && enemy_block == 0, "Initial block");
             check(player_turn_start_pulse && !victory && !defeat, "New battle pulse/result");
             @(negedge clk); start_battle=0;
@@ -134,7 +141,7 @@ module tb_combat;
             @(negedge clk); end_turn_pulse=1;
             tick;
             check(dut.state == ENEMY_PREP && !player_turn, "PLAYER -> ENEMY_PREP");
-            check(enemy_turn_start_pulse && enemy_energy == 3 &&
+            check(enemy_turn_start_pulse && enemy_energy == TURN_EN &&
                   enemy_block == 0, "Enemy starts with restored energy and cleared block");
             @(negedge clk); end_turn_pulse=0;
             tick;
@@ -157,7 +164,7 @@ module tb_combat;
         begin
             tick;
             check(dut.state == PLAYER_PREP && player_turn, "Enemy without a card -> PLAYER_PREP");
-            check(player_turn_start_pulse && player_energy == 3 &&
+            check(player_turn_start_pulse && player_energy == TURN_EN &&
                   player_block == 0, "Player starts with restored energy and cleared block");
             tick;
             check(dut.state == PLAYER && !player_turn_start_pulse, "New player turn");
@@ -202,7 +209,7 @@ module tb_combat;
             end_turn;
             tick;
             check(enemy_card_used_pulse && enemy_card_used_index == 0, "Enemy AI used STRIKE");
-            check(enemy_energy == 2, "Enemy STRIKE costs one energy");
+            check(enemy_energy == TURN_EN-STRIKE_COST, "Enemy STRIKE costs one energy");
             check(player_hp == remaining_hp, "Enemy STRIKE player HP damage");
             check(player_block == ((old_block > 6) ? old_block-6 : 0), "Enemy STRIKE player block damage");
             check(!enemy_draw_pulse && enemy_draw_count == 0, "Enemy STRIKE does not draw");
@@ -226,7 +233,7 @@ module tb_combat;
             #1;
             check(selected_card_affordable, "Effect card affordable");
             expected_hp=player_hp+rom_heal;
-            if (expected_hp > 100) expected_hp=100;
+            if (expected_hp > P_MAX) expected_hp=P_MAX;
             expected_energy=player_energy;
             expected_energy=expected_energy-rom_cost+rom_gain;
             if (expected_energy > 15) expected_energy=15;
@@ -247,7 +254,7 @@ module tb_combat;
         // Test reset -> IDLE
         tick;
         check(dut.state == IDLE && !player_turn && !victory && !defeat, "Reset -> IDLE");
-        check(player_hp == 100 && enemy_hp == 50 && player_energy == 0 &&
+        check(player_hp == P_MAX && enemy_hp == E_MAX && player_energy == 0 &&
               enemy_energy == 0 && player_block == 0 && enemy_block == 0, "Reset values");
         check(!player_card_used_pulse && !enemy_card_used_pulse &&
               !player_draw_pulse && !enemy_draw_pulse &&
@@ -263,7 +270,7 @@ module tb_combat;
         // Find defense and optional effect cards from the real ROM.
         for (i=0; i<16; i=i+1) begin
             rom_id=i; #1;
-            if (rom_valid && rom_cost <= 3 && rom_damage == 0) begin
+            if (rom_valid && rom_cost <= TURN_EN && rom_damage == 0) begin
                 if (!defense_found && rom_type == 2 && rom_block > 0 &&
                     rom_heal == 0 && rom_draw == 0 && rom_gain == 0) begin
                     defense_found=1; defense_id=i;
@@ -284,12 +291,15 @@ module tb_combat;
         check(!player_selected_card_valid && !selected_card_affordable, "Invalid hand index");
         play;
         check(dut.state == PLAYER && !player_card_used_pulse &&
-              player_energy == 3 && enemy_hp == 50, "Invalid card ignored");
+              player_energy == TURN_EN && enemy_hp == E_MAX, "Invalid card ignored");
 
         // Test attack, selected index, energy consumption and WAIT.
-        strike(2'd1); check(enemy_hp == 44 && player_energy == 2, "First attack");
-        strike(2'd0); check(enemy_hp == 38 && player_energy == 1, "Second attack");
-        strike(2'd0); check(enemy_hp == 32 && player_energy == 0, "Third attack");
+        strike(2'd1); check(enemy_hp == E_MAX-STRIKE_DAMAGE && player_energy == TURN_EN-1, "First attack");
+        for (i=1; i<TURN_EN; i=i+1) begin
+            strike(2'd0);
+            check(enemy_hp == E_MAX-(i+1)*STRIKE_DAMAGE &&
+                  player_energy == TURN_EN-i-1, "Repeated attack");
+        end
 
         // Test insufficient energy.
         @(negedge clk); player_hand_count=1; player_selected_index=0;
@@ -297,17 +307,17 @@ module tb_combat;
         check(player_selected_card_valid && !selected_card_affordable, "Insufficient energy");
         play;
         check(dut.state == PLAYER && !player_card_used_pulse &&
-              player_energy == 0 && enemy_hp == 32, "Unaffordable card ignored");
+              player_energy == 0 && enemy_hp == E_MAX-TURN_EN*STRIKE_DAMAGE, "Unaffordable card ignored");
 
         // Test enemy AI attack and automatic return to player.
         enemy_strike;
-        check(player_hp == 94 && player_energy == 3, "Enemy attacks then player energy restores");
+        check(player_hp == P_MAX-STRIKE_DAMAGE && player_energy == TURN_EN, "Enemy attacks then player energy restores");
 
         // Test player block and enemy block independently.
         if (defense_found) begin
             begin_battle;
             player_effect(defense_id);
-            check(player_block == defense_block && player_energy == 3-defense_cost,
+            check(player_block == defense_block && player_energy == TURN_EN-defense_cost,
                   "Player defense card adds block");
             enemy_strike;
             check(player_block == 0, "Player block clears at new turn");
@@ -317,7 +327,7 @@ module tb_combat;
             end_turn;
             tick;
             check(enemy_card_used_pulse && enemy_card_used_index == 0 &&
-                  enemy_block == defense_block && enemy_energy == 3-defense_cost,
+                  enemy_block == defense_block && enemy_energy == TURN_EN-defense_cost,
                   "Enemy defense card adds block");
             enemy_wait; return_to_player;
             check(enemy_block == defense_block, "Enemy block persists during player turn");
@@ -330,7 +340,7 @@ module tb_combat;
         // Test effect cards if present in the current ROM.
         if (heal_found) begin
             begin_battle;
-            player_effect(heal_id); // At max HP: healing must not exceed 100.
+            player_effect(heal_id); // At max HP: healing must not exceed P_MAX.
             begin_battle;
             enemy_strike;
             player_effect(heal_id); // Heal after taking damage.
@@ -342,11 +352,11 @@ module tb_combat;
             begin_battle; player_effect(gain_id);
         end else $display("SKIP: no affordable non-damaging energy gain card found");
 
-        // Test victory: 9 STRIKE cards reduce 50 HP to zero.
+        // Test victory: 5 STRIKE cards reduce 30 HP to zero.
         begin_battle;
-        for (i=0; i<9; i=i+1) begin
+        for (i=0; i<WIN_HITS; i=i+1) begin
             strike(2'd0);
-            if (i<8) begin
+            if (i<WIN_HITS-1) begin
                 check(!victory && !defeat, "Battle continues before lethal hit");
                 end_turn; return_to_player;
             end
@@ -358,10 +368,10 @@ module tb_combat;
 
         // Test starting a new battle after victory (without global reset).
         begin_battle;
-        // Test defeat: 17 enemy STRIKE cards reduce 100 HP to zero.
-        for (i=0; i<17; i=i+1) begin
+        // Test defeat: 9 enemy STRIKE cards reduce 50 HP to zero.
+        for (i=0; i<LOSE_HITS; i=i+1) begin
             enemy_strike;
-            if (i<16) check(!defeat && !victory, "Player survives non-lethal hit");
+            if (i<LOSE_HITS-1) check(!defeat && !victory, "Player survives non-lethal hit");
         end
         check(player_hp == 0 && defeat && !victory && !player_turn &&
               dut.state == FINISHED, "Defeat -> FINISHED");
@@ -372,7 +382,7 @@ module tb_combat;
         @(negedge clk); resetn=0;
         tick;
         check(dut.state == IDLE && !victory && !defeat &&
-              player_hp == 100 && enemy_hp == 50 && player_energy == 0 &&
+              player_hp == P_MAX && enemy_hp == E_MAX && player_energy == 0 &&
               enemy_energy == 0, "Reset after defeat");
 
         $display("PASS tb_combat (see SKIP messages for optional tests)");

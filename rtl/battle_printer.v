@@ -1,7 +1,7 @@
 // 绘制敌人、卡牌、血条、选择框
 // Zicheng
 // Pixel format: {red[2:0], green[2:0], blue[2:0]}.
-module battle_printer  #(parameter [6:0] PLAYER_MAX_HP = 7'd80,parameter [6:0] ENEMY_MAX_HP  = 7'd30)
+module battle_printer  #(parameter [6:0] PLAYER_MAX_HP = 7'd50,parameter [6:0] ENEMY_MAX_HP  = 7'd30)
 (
     input  wire  clk,
 	 input  wire [7:0]  pixel_x, 
