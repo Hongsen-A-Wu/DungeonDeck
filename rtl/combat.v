@@ -53,9 +53,9 @@ module combat(clock,resetn,start_battle,
     output reg player_turn_start_pulse,enemy_turn_start_pulse; // Turn draw
 
     // Need to be test
-    parameter [6:0] PLAYER_MAX_HP = 7'd100;
-    parameter [6:0] ENEMY_MAX_HP = 7'd50;
-    parameter [3:0] ENERGY_PER_TURN = 4'd3;
+    parameter [6:0] PLAYER_MAX_HP = 7'd50;
+    parameter [6:0] ENEMY_MAX_HP = 7'd30;
+    parameter [3:0] ENERGY_PER_TURN = 4'd4;
 
     // Battle state parameters
     localparam [2:0] IDLE        = 3'd0; // Wait for start

@@ -219,12 +219,12 @@ module battle_text(pixel_x,pixel_y,
 
         // Selected Card Name
         else if (pixel_x >= 3 && pixel_x < 67 &&
-                pixel_y >= 80 && pixel_y < 88) begin
+                pixel_y >=50 && pixel_y < 58) begin
 
             active = 1'b1;
 
             local_x = pixel_x - 3;
-            local_y = pixel_y - 80;
+            local_y = pixel_y - 50;
 
             char_index = local_x / 8;
             text_color = YELLOW;
@@ -238,12 +238,12 @@ module battle_text(pixel_x,pixel_y,
         // Selected Card Cost
         else if (show_card &&
                 pixel_x >= 3 && pixel_x < 51 &&
-                pixel_y >= 89 && pixel_y < 97) begin
+                pixel_y >= 59 && pixel_y < 67) begin
 
             active = 1'b1;
 
             local_x = pixel_x - 3;
-            local_y = pixel_y - 89;
+            local_y = pixel_y - 59;
 
             char_index = local_x / 8;
             text_color = YELLOW;

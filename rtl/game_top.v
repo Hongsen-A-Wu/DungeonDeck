@@ -191,13 +191,17 @@ module game_top (CLOCK_50,KEY,SW,PS2_CLK,PS2_DAT,LEDR,
 
     // The last page of monster dialogue triggers the fight.
     // game_fsm needs BOTH interact_pulse and at_enemy to enter BATTLE.
-    wire monster_dialogue_done = near_monster && dialogue_finished_pulse &&
-                                 (dialogue_id == DLG_MONSTER);
+    wire monster_dialogue_done =
+        near_monster && confirm;
+
     wire at_enemy = monster_dialogue_done;
 
-    assign interact_pulse = (confirm && scene_ready && !dialogue_active &&
-                             !dialogue_start_allowed) || monster_dialogue_done;
-    assign back_pulse = back && !dialogue_active;
+    assign interact_pulse =
+        (confirm && scene_ready &&
+        !dialogue_active &&
+        !dialogue_start_allowed)
+        || monster_dialogue_done;
+        assign back_pulse = back && !dialogue_active;
 
     exploration explore (
         .clock(CLOCK_50),
@@ -311,6 +315,24 @@ module game_top (CLOCK_50,KEY,SW,PS2_CLK,PS2_DAT,LEDR,
         .pixel_color(battle_color)
     );
 
+    wire battle_text_on;
+    wire [8:0] battle_text_color;
+
+    battle_text u_battle_text (
+        .pixel_x(draw_x),
+        .pixel_y(draw_y),
+        .player_hp(player_hp),
+        .enemy_hp(enemy_hp),
+        .player_block(player_block),
+        .enemy_block(enemy_block),
+        .energy(energy),
+        .player_turn(player_turn),
+        .selected_card_id(selected_card_id),
+        .selected_card_valid(selected_card_valid),
+        .text_on(battle_text_on),
+        .text_color(battle_text_color)
+    );
+
     printer print (
         .clk(CLOCK_50),
         .resetn(resetn),
@@ -328,7 +350,10 @@ module game_top (CLOCK_50,KEY,SW,PS2_CLK,PS2_DAT,LEDR,
         .draw_write(vga_write)
     );
 
-    assign draw_color = (scene == SCENE_BATTLE) ? battle_color : printer_color;
+    assign draw_color = 
+            (scene == SCENE_BATTLE) ?
+            (battle_text_on ? battle_text_color : battle_color)
+            : printer_color;
 
     vga_adapter #(
         .RESOLUTION("160x120"),

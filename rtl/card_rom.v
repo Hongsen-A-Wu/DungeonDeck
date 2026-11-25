@@ -1,5 +1,5 @@
 // Checked by Hongsen on 2026-11-24
-// A fsm storing 10 types of card
+// A LUT storing 10 types of card
 
 module card_rom(card_id,card_valid,card_type,energy_cost,
                 damage,block,heal,draw_count,energy_gain,card_name);
@@ -9,7 +9,7 @@ module card_rom(card_id,card_valid,card_type,energy_cost,
     output reg [1:0] card_type;
     output reg [2:0] energy_cost;
     output reg [5:0] damage,block,heal;
-    output reg [2:0] extra_draw,energy_gain;
+    output reg [2:0] draw_count,energy_gain;
     output reg [63:0] card_name; // Eight ASCII characters, space-padded
 
     localparam [1:0] ATTACK  = 2'd0;
