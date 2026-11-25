@@ -302,7 +302,8 @@ module game_top (CLOCK_50,KEY,SW,PS2_CLK,PS2_DAT,LEDR,
 
     // A simple battle display until the final card/text renderer is ready.
     battle_printer u_battle_display (
-        .pixel_x(draw_x),
+        .clk(CLOCK_50),
+		  .pixel_x(draw_x),
         .pixel_y(draw_y),
         .player_hp(player_hp),
         .enemy_hp(enemy_hp),
