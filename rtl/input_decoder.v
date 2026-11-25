@@ -1,4 +1,4 @@
-// Checked by Hongsen on 2026-11-13
+// Checked by Hongsen on 2026-11-24
 
 // Independent of physical PS/2 receiver and scan_code decoder
 
@@ -54,8 +54,8 @@ module input_decoder (clock,resetn,scan_code,scan_valid,in_battle,
             confirm               <= 1'b0;
             back                  <= 1'b0;
             restart               <= 1'b0;
-            play_card_pulse       <= 1'b0;
-            end_turn_pulse        <= 1'b0;
+            play_card_pulse       <= 1'b0; // Battle
+            end_turn_pulse        <= 1'b0; // Battle
 
         end else begin
             move_up         <= 1'b0;
@@ -80,7 +80,7 @@ module input_decoder (clock,resetn,scan_code,scan_valid,in_battle,
                 end else if (scan_code == 8'hF0) begin
                     break_pending <= 1'b1;
                 end else begin
-                    // Re-arm a key after its F0 release packet
+                    // Record a key after its F0 release packet
                     if (break_pending && !extended_pending) begin
                         case (scan_code)
                             8'h5A: enter_down     <= 1'b0; // Enter

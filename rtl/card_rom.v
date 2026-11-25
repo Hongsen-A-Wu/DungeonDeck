@@ -1,3 +1,4 @@
+// Checked by Hongsen on 2026-11-24
 // A fsm storing 10 types of card
 
 module card_rom(card_id,card_valid,card_type,energy_cost,
@@ -30,7 +31,7 @@ module card_rom(card_id,card_valid,card_type,energy_cost,
         card_name   = "INVALID ";
         
         case(card_id)
-            // Damage cards (highest enemy AI priority).
+            // Damage cards (highest enemy AI priority)
             4'd0: begin
                 card_valid = 1'b1;
                 card_type = ATTACK;

@@ -1,3 +1,4 @@
+// Checked by Hongsen on 2026-11-24
 // Compact 5x7 glyphs placed inside 8x8 character cells.
 // Uppercase ASCII, digits and common punctuation. No separate font MIF.
 module font (ascii_code,pixel_col,pixel_row,pixel_on);

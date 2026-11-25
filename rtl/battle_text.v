@@ -1,3 +1,4 @@
+// Checked by Hongsen on 2026-11-24
 module battle_text(pixel_x,pixel_y,
                     player_hp,enemy_hp,player_block,enemy_block,
                     energy,player_turn,selected_card_id,selected_card_valid,

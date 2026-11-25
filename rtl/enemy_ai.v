@@ -1,11 +1,14 @@
+// Checked by Hongsen on 2026-11-24
+
 module enemy_ai(enemy_hand,enemy_hand_count,enemy_energy,
                  selected_valid,selected_index,selected_card_id);
+
     input wire [15:0] enemy_hand; // Up to four 4-bit card IDs.
-    input wire [2:0] enemy_hand_count; // 0..4 active hand slots.
+    input wire [2:0] enemy_hand_count; // 0-4 active hand slots.
     input wire [3:0] enemy_energy;
 
-    output reg selected_valid;
-    output reg [1:0] selected_index; // Slot 0..3.
+    output reg selected_valid; // If the monster choose a card
+    output reg [1:0] selected_index; // Slot 0-3.
     output reg [3:0] selected_card_id;
 
     localparam [1:0] ATTACK  = 2'd0;
@@ -82,7 +85,7 @@ module enemy_ai(enemy_hand,enemy_hand_count,enemy_energy,
 
     task check_card;
 
-        input [1:0] i;
+        input [1:0] ind;
         input valid;
         input [3:0] id;
         input [1:0] card_type;
@@ -92,7 +95,7 @@ module enemy_ai(enemy_hand,enemy_hand_count,enemy_energy,
         input [3:0] energy;
 
         begin
-            if ((i < hand_count) &&
+            if ((ind < hand_count) &&
                 valid &&
                 ({1'b0, cost} <= energy)) begin
 
@@ -106,12 +109,11 @@ module enemy_ai(enemy_hand,enemy_hand_count,enemy_energy,
                 if ((current_priority != 2'd3) &&
                     (!selected_valid ||
                     (current_priority < best_priority) ||
-                    ((current_priority == best_priority) &&
-                    (current_priority == 2'd0) &&
+                    ((current_priority == 2'd0) &&
                     (damage > best_damage)))) begin
 
                     selected_valid = 1'b1;
-                    selected_index = i;
+                    selected_index = ind;
                     selected_card_id = id;
 
                     best_priority = current_priority;
