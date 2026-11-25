@@ -3,7 +3,8 @@
 // Pixel format: {red[2:0], green[2:0], blue[2:0]}.
 module battle_printer  #(parameter [6:0] PLAYER_MAX_HP = 7'd80,parameter [6:0] ENEMY_MAX_HP  = 7'd30)
 (
-    input  wire [7:0]  pixel_x, 
+    input  wire  clk,
+	 input  wire [7:0]  pixel_x, 
     input  wire [6:0]  pixel_y, 
     input  wire [6:0]  player_hp,
     input  wire [6:0]  enemy_hp,
@@ -72,30 +73,26 @@ module battle_printer  #(parameter [6:0] PLAYER_MAX_HP = 7'd80,parameter [6:0] E
     wire [6:0] digit_row = (card_y - 7'd10) >> 1;
     wire in_digit = (card_x >= 5'd11) && (card_x < 5'd17) && (card_y >= 7'd10) && (card_y < 7'd20);
 
-    // An 8x8 enemy sprite. One set bit draws one body pixel.
-    function [7:0] enemy_shape;
-        input [2:0] row;
-        begin
-            case (row)
-                3'd0: enemy_shape = 8'b01000010;
-                3'd1: enemy_shape = 8'b01100110;
-                3'd2: enemy_shape = 8'b00111100;
-                3'd3: enemy_shape = 8'b01111110;
-                3'd4: enemy_shape = 8'b11111111;
-                3'd5: enemy_shape = 8'b01111110;
-                3'd6: enemy_shape = 8'b00111100;
-                3'd7: enemy_shape = 8'b01100110;
-            endcase
-        end
-    endfunction
+    // Goblin sprite: 32x32 pixels, {opaque, red[2:0], green[2:0], blue[2:0]}.
+    (* ram_init_file = "../data/goblin.mif" *)
+    reg [9:0] goblin_rom [0:1023];
+    reg [9:0] goblin_pixel;
 
-    // Each enemy pixel occupies 4x4 screen pixels.
-    wire [7:0] enemy_x = pixel_x - 8'd96;
-    wire [6:0] enemy_y = pixel_y - 7'd28;
-    wire [2:0] enemy_col = enemy_x[4:2];
-    wire [2:0] enemy_row = enemy_y[4:2];
-    wire [7:0] enemy_bits = enemy_shape(enemy_row);
+    // Prefetch the pixel that printer will draw after the next clock edge.
+    wire end_of_line = (pixel_x == 8'd159);
+    wire [7:0] next_x = end_of_line ? 8'd0 : pixel_x + 8'd1;
+    wire [6:0] next_y = end_of_line ? ((pixel_y == 7'd119) ? 7'd0 : pixel_y + 7'd1): pixel_y;
 
+    // The top-left corner of the sprite is at screen position (96, 28).
+    wire [7:0] goblin_x = next_x - 8'd96;
+    wire [6:0] goblin_y = next_y - 7'd28;
+    wire [9:0] goblin_addr = {goblin_y[4:0], goblin_x[4:0]};
+
+    always @(posedge clk) begin
+        goblin_pixel <= goblin_rom[goblin_addr];
+    end
+
+    // Check the screen position currently being drawn.
     wire in_enemy = (pixel_x >= 8'd96) && (pixel_x < 8'd128) && (pixel_y >= 7'd28) && (pixel_y < 7'd60);
 
     // Up to 15 energy pips, each six pixels wide with a two-pixel gap.
@@ -120,12 +117,8 @@ module battle_printer  #(parameter [6:0] PLAYER_MAX_HP = 7'd80,parameter [6:0] E
             end
         end
 
-        // Enemy body and eyes.
-        if (in_enemy && enemy_bits[3'd7 - enemy_col]) begin
-            pixel_color = PURPLE;
-            if (enemy_row == 3'd4 && (enemy_col == 3'd2 || enemy_col == 3'd5))
-                pixel_color = YELLOW;
-        end
+        // Draw opaque goblin pixels over the battle background.
+        if (in_enemy && goblin_pixel[9]) pixel_color = goblin_pixel[8:0];
 
         // Bottom hand panel and energy.
         if (pixel_y >= 7'd82) pixel_color = PANEL;
