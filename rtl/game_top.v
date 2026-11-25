@@ -251,7 +251,7 @@ module game_top (CLOCK_50,KEY,SW,PS2_CLK,PS2_DAT,LEDR,
         .enemy_card_used_index(enemy_card_used_index),
         .player_draw_pulse(player_draw_pulse),
         .player_draw_count(player_draw_count),
-        .enemy_draw_pulse(enemy_draw_pulse),
+        .enemy_draw_pulse(enemy_draw_pulse),从起始位开始，向高位连续取 4 位
         .enemy_draw_count(enemy_draw_count),
         .player_turn_start_pulse(player_turn_start_pulse),
         .enemy_turn_start_pulse(enemy_turn_start_pulse),
@@ -297,7 +297,7 @@ module game_top (CLOCK_50,KEY,SW,PS2_CLK,PS2_DAT,LEDR,
     );
 
     // A simple battle display until the final card/text renderer is ready.
-    battle_display u_battle_display (
+    battle_printer u_battle_display (
         .pixel_x(draw_x),
         .pixel_y(draw_y),
         .player_hp(player_hp),
